@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/* Thiết lập màu nền mặc định cho app theo thiết kế / App.jsx */
+body {
+  background-color: #020617; /* slate-950 */
+  color: #f8fafc; /* slate-50 */
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+/* Ghi đè CSS của PrimeReact theo chủ đề tối (Dark mode) */
+.p-rating-icon {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+.p-carousel-indicators .p-carousel-indicator.p-highlight button {
+  background-color: #6366f1 !important; /* indigo-500 */
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-900 */
+}
+::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* slate-600 */
+}
