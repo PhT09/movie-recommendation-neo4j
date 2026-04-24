@@ -29,16 +29,17 @@ def recommend_by_genre(driver, user_id):
     Giả sử "thích" là rating >= 4.0
     """
     query = """
-    MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie)-[:HAS_GENRE]->(g:Genre)
+    MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie)-[:IN_GENRE]->(g:Genre)
     WHERE toFloat(r.rating) >= 4.0
     WITH u, g, count(m) AS movies_in_genre
     WHERE movies_in_genre >= 5
     
     // Tìm các phim thuộc thể loại đó mà user chưa xem
-    MATCH (g)<-[:HAS_GENRE]-(rec:Movie)
+    MATCH (rec:Movie)-[:IN_GENRE]->(g)
     WHERE NOT (u)-[:RATED]->(rec)
     
     RETURN rec.title AS recommended_movie, g.name AS genre, movies_in_genre
+    ORDER BY movies_in_genre DESC
     LIMIT 10
     """
     print(f"\n--- GỢI Ý THEO GENRE CHO USER {user_id} ---")
@@ -50,25 +51,26 @@ def recommend_by_genre(driver, user_id):
 
 def recommend_by_similar_users(driver, user_id):
     """
-    Theo user tương tự (≥ 500 phim giống nhau)
+    Theo user tương tự (≥ 10 phim giống nhau)
     """
     query = """
     MATCH (u1:User {userId: $user_id})-[:RATED]->(m:Movie)<-[:RATED]-(u2:User)
     WITH u1, u2, count(m) AS common_movies
-    // Lọc user có >= 500 phim giống nhau
-    WHERE common_movies >= 500
+    // Lọc user có >= 10 phim giống nhau
+    WHERE common_movies >= 10
     
     // Tìm phim u2 đã xem (và thích, rating >= 4.0) mà u1 chưa xem
     MATCH (u2)-[r:RATED]->(rec:Movie)
     WHERE toFloat(r.rating) >= 4.0 AND NOT (u1)-[:RATED]->(rec)
     
     RETURN rec.title AS recommended_movie, u2.userId AS similar_user, common_movies
+    ORDER BY common_movies DESC, toFloat(r.rating) DESC
     LIMIT 10
     """
-    print(f"\n--- GỢI Ý THEO USER TƯƠNG TỰ (>= 500 PHIM CHUNG) CHO USER {user_id} ---")
+    print(f"\n--- GỢI Ý THEO USER TƯƠNG TỰ (>=  10 PHIM CHUNG) CHO USER {user_id} ---")
     records, _, _ = driver.execute_query(query, user_id=user_id, database_="neo4j")
     if not records:
-        print("Không tìm thấy user nào có >= 500 phim chung, hoặc không có phim gợi ý.")
+        print("Không tìm thấy user nào có >= 10 phim chung, hoặc không có phim gợi ý.")
     for r in records:
         print(f"Phim: {r['recommended_movie']} | User tương tự: {r['similar_user']} ({r['common_movies']} phim chung)")
 
