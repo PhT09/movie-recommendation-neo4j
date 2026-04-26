@@ -2,3 +2,6 @@ neo4j
 python-dotenv
 pandas
 jupyter
+fastapi
+uvicorn
+pydantic
