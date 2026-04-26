@@ -31,3 +31,6 @@ class UserResponse(BaseModel):
     user_id: int = Field(..., alias='userId')
     name: Optional[str] = None
 
+class UserCreate(BaseModel):
+    name: str
+
