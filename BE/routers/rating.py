@@ -11,11 +11,11 @@ router = APIRouter(
 @router.post("/", response_model=RatingResponse, status_code=201)
 def create_rating(rating_data: RatingCreate):
     query = """
-    MERGE (u:User {id: $user_id})
-    MERGE (m:Movie {id: $movie_id})
-    MERGE (u)-[r:LIKE]->(m)
+    MERGE (u:User {userId: $user_id})
+    MERGE (m:Movie {movieId: $movie_id})
+    MERGE (u)-[r:RATED]->(m)
     SET r.rating = $rating, r.timestamp = $timestamp
-    RETURN u.id AS user_id, m.id AS movie_id, r.rating AS rating, r.timestamp AS timestamp
+    RETURN u.userId AS user_id, m.movieId AS movie_id, r.rating AS rating, r.timestamp AS timestamp
     """
     timestamp = int(time.time())
     params = {
@@ -43,9 +43,9 @@ def create_rating(rating_data: RatingCreate):
 @router.put("/", response_model=RatingResponse)
 def update_rating(rating_data: RatingCreate):
     query = """
-    MATCH (u:User {id: $user_id})-[r:LIKE]->(m:Movie {id: $movie_id})
+    MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie {movieId: $movie_id})
     SET r.rating = $rating, r.timestamp = $timestamp
-    RETURN u.id AS user_id, m.id AS movie_id, r.rating AS rating, r.timestamp AS timestamp
+    RETURN u.userId AS user_id, m.movieId AS movie_id, r.rating AS rating, r.timestamp AS timestamp
     """
     timestamp = int(time.time())
     params = {
@@ -73,7 +73,7 @@ def update_rating(rating_data: RatingCreate):
 @router.delete("/")
 def delete_rating(rating_data: RatingDelete):
     query = """
-    MATCH (u:User {id: $user_id})-[r:LIKE]->(m:Movie {id: $movie_id})
+    MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie {movieId: $movie_id})
     DELETE r
     RETURN COUNT(r) AS deleted_count
     """
