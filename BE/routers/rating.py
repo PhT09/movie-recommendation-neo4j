@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from models.schemas import RatingCreate, RatingResponse
+from models.schemas import RatingCreate, RatingResponse, RatingDelete
 from db.neo4j_conn import neo4j_conn
 import time
 
@@ -71,15 +71,15 @@ def update_rating(rating_data: RatingCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/")
-def delete_rating(user_id: int, movie_id: int):
+def delete_rating(rating_data: RatingDelete):
     query = """
     MATCH (u:User {id: $user_id})-[r:LIKE]->(m:Movie {id: $movie_id})
     DELETE r
     RETURN COUNT(r) AS deleted_count
     """
     params = {
-        "user_id": user_id,
-        "movie_id": movie_id
+        "user_id": rating_data.user_id,
+        "movie_id": rating_data.movie_id
     }
     
     try:
