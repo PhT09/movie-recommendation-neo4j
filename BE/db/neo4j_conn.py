@@ -7,7 +7,7 @@ load_dotenv()
 class Neo4jConnection:
     def __init__(self):
         uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-        user = os.getenv("NEO4J_USER", "neo4j")
+        user = os.getenv("NEO4J_USERNAME", "neo4j")
         pwd = os.getenv("NEO4J_PASSWORD", "password")
         self.driver = GraphDatabase.driver(uri, auth=(user, pwd))
 

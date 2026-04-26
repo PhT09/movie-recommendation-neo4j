@@ -29,13 +29,13 @@ def recommend_by_genre(driver, user_id):
     Giả sử "thích" là rating >= 4.0
     """
     query = """
-    MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie)-[:IN_GENRE]->(g:Genre)
+    MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie)-[:HAS_GENRE]->(g:Genre)
     WHERE toFloat(r.rating) >= 4.0
     WITH u, g, count(m) AS movies_in_genre
     WHERE movies_in_genre >= 5
     
     // Tìm các phim thuộc thể loại đó mà user chưa xem
-    MATCH (rec:Movie)-[:IN_GENRE]->(g)
+    MATCH (rec:Movie)-[:HAS_GENRE]->(g)
     WHERE NOT (u)-[:RATED]->(rec)
     
     RETURN rec.title AS recommended_movie, g.name AS genre, movies_in_genre
