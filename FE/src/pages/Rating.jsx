@@ -16,19 +16,45 @@ export default function Rating() {
   const [userRatings, setUserRatings] = useState({});
   const toast = useRef(null);
 
-  const genres = [
-    { label: 'Tất cả', value: '' },
-    { label: 'Action', value: 'Action' },
-    { label: 'Sci-Fi', value: 'Sci-Fi' },
-    { label: 'Comedy', value: 'Comedy' },
-    { label: 'Drama', value: 'Drama' },
-  ];
+  const [genresOptions, setGenresOptions] = useState([{ label: 'Tất cả', value: '' }]);
+  const [skip, setSkip] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 50;
 
-  const fetchMovies = async () => {
-    setLoading(true);
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const data = await ApiService.getGenres();
+        const formattedGenres = data.map(g => ({ label: g, value: g }));
+        setGenresOptions([{ label: 'Tất cả', value: '' }, ...formattedGenres]);
+      } catch (err) {
+        console.error("Lỗi khi tải thể loại phim", err);
+      }
+    };
+    fetchGenres();
+  }, []);
+
+  const fetchMovies = async (reset = false) => {
+    if (reset) {
+      setLoading(true);
+    }
     try {
-      const data = await ApiService.getMovies(search, selectedGenre);
-      setMovies(data);
+      const currentSkip = reset ? 0 : skip;
+      const data = await ApiService.getMovies(search, selectedGenre, currentSkip, LIMIT);
+      
+      if (reset) {
+        setMovies(data);
+        setSkip(LIMIT);
+      } else {
+        setMovies(prev => [...prev, ...data]);
+        setSkip(currentSkip + LIMIT);
+      }
+      
+      if (data.length < LIMIT) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
     } catch (error) {
       toast.current.show({ severity: 'error', summary: 'Lỗi', detail: 'Không thể tải danh sách phim' });
     } finally {
@@ -37,7 +63,7 @@ export default function Rating() {
   };
 
   useEffect(() => {
-    fetchMovies();
+    fetchMovies(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, selectedGenre]);
 
@@ -114,7 +140,7 @@ export default function Rating() {
           </div>
           <Dropdown
             value={selectedGenre}
-            options={genres}
+            options={genresOptions}
             onChange={(e) => setSelectedGenre(e.value)}
             placeholder="Thể loại"
             className="w-full sm:w-48 bg-slate-800 border border-slate-700 text-white rounded-xl shadow-sm flex items-center"
@@ -124,39 +150,45 @@ export default function Rating() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center p-12">
-          <i className="pi pi-spin pi-spinner text-4xl text-indigo-500"></i>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:grid-cols-5 gap-6">
-          {movies.map(movie => (
-            <div key={movie.id} className="bg-slate-800 rounded-2xl overflow-hidden shadow-lg border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 hover:-translate-y-1 group flex flex-col min-h-[220px]">
-              <div className="p-5 flex flex-col flex-grow items-center justify-center text-center relative border-b border-slate-700/30 bg-slate-800/50">
-                <div className="absolute top-3 right-3">
-                  <span className="text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-1 rounded-md shadow-sm">
-                    {movie.year || 'N/A'}
-                  </span>
-                </div>
-                <h3 className="font-bold text-xl text-white mt-4 mb-2 line-clamp-2" title={movie.title}>{movie.title}</h3>
-                <p className="text-xs text-slate-400">{movie.genres ? movie.genres.join(' • ') : 'Không rõ thể loại'}</p>
-              </div>
-              <div className="p-4 mt-auto">
-                <div className="flex justify-center py-2 bg-slate-900/50 rounded-xl">
-                  <PrimeRating
-                    value={userRatings[movie.id] || 0}
-                    onChange={(e) => handleRatingChange(e, movie.id)}
-                    cancel={false}
-                    className="text-amber-400 gap-1"
-                    pt={{
-                      onIcon: { className: 'text-amber-400' },
-                      offIcon: { className: 'text-slate-600' }
-                    }}
-                  />
-                </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:grid-cols-5 gap-6">
+        {movies.map(movie => (
+          <div key={movie.id} className="bg-slate-800 rounded-2xl overflow-hidden shadow-lg border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 hover:-translate-y-1 group flex flex-col min-h-[220px]">
+            <div className="p-5 flex flex-col flex-grow items-center justify-center text-center relative border-b border-slate-700/30 bg-slate-800/50">
+              <h3 className="font-bold text-xl text-white mt-4 mb-2 line-clamp-2" title={movie.title}>{movie.title}</h3>
+              <p className="text-xs text-slate-400">{movie.genres ? movie.genres.join(' • ') : 'Không rõ thể loại'}</p>
+            </div>
+            <div className="p-4 mt-auto">
+              <div className="flex justify-center py-2 bg-slate-900/50 rounded-xl">
+                <PrimeRating
+                  value={userRatings[movie.id] || 0}
+                  onChange={(e) => handleRatingChange(e, movie.id)}
+                  cancel={false}
+                  className="text-amber-400 gap-1"
+                  pt={{
+                    onIcon: { className: 'text-amber-400' },
+                    offIcon: { className: 'text-slate-600' }
+                  }}
+                />
               </div>
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
+
+      {loading && (
+        <div className="flex justify-center p-8">
+          <i className="pi pi-spin pi-spinner text-3xl text-indigo-500"></i>
+        </div>
+      )}
+
+      {!loading && hasMore && movies.length > 0 && (
+        <div className="flex justify-center mt-8">
+          <button 
+            onClick={() => fetchMovies(false)}
+            className="px-6 py-2.5 bg-slate-800 hover:bg-indigo-600 text-white rounded-full font-medium transition-colors border border-slate-700 hover:border-indigo-500 shadow-md flex items-center gap-2"
+          >
+            <i className="pi pi-refresh"></i> Tải thêm phim
+          </button>
         </div>
       )}
 

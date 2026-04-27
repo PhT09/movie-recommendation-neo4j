@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import recommendation, rating, movie, user
-from db.neo4j_conn import neo4j_conn
+from database.connection import neo4j_conn
 
 app = FastAPI(
     title="Movie Recommendation API",

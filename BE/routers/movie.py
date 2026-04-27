@@ -1,39 +1,33 @@
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from models.schemas import Movie
-from db.neo4j_conn import neo4j_conn
+from services.movie_service import list_movies, list_genres
 
 router = APIRouter(
     prefix="/movies",
     tags=["Movies"]
 )
 
-@router.get("/", response_model=List[Movie])
-def get_movies(search: Optional[str] = "", genre: Optional[str] = ""):
-    query = "MATCH (m:Movie) WHERE m.title IS NOT NULL"
-    params = {}
-    
-    if search:
-        query += " AND toLower(m.title) CONTAINS toLower($search)"
-        params["search"] = search
-        
-    query += " RETURN m LIMIT 50"
-    
+@router.get("/genres", response_model=List[str])
+def get_genres():
     try:
-        result = neo4j_conn.query(query, params)
+        return list_genres()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/", response_model=List[Movie])
+def get_movies(
+    search: Optional[str] = "", 
+    genre: Optional[str] = "",
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, le=100)
+):
+    try:
+        results = list_movies(search=search, genre=genre, skip=skip, limit=limit)
+        # Map DB results to Movie schema
         movies = []
-        for row in result:
-            m = dict(row["m"])
-            movie_id = m.get("movieId") or m.get("id") or 0
-            title = m.get("title", "Unknown")
-            genres = m.get("genres", ["Action"])
-            if isinstance(genres, str):
-                genres = [g.strip() for g in genres.split("|")]
-            
-            if genre and genre.lower() not in [g.lower() for g in genres]:
-                continue
-                
-            movies.append(Movie(id=movie_id, title=title, genres=genres))
+        for r in results:
+            movies.append(Movie(id=r["movieId"], title=r["title"], genres=[])) # Genres fetch can be improved if needed
         return movies
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

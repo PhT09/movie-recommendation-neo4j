@@ -51,15 +51,24 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // ==========================================
 export const ApiService = {
   // Lấy danh sách phim để người dùng đánh giá
-  getMovies: async (search = '', genre = '') => {
+  getMovies: async (search = '', genre = '', skip = 0, limit = 50) => {
     if (USE_MOCK) {
       await delay(500);
       return MOCK_MOVIES.filter(m => 
         m.title.toLowerCase().includes(search.toLowerCase()) &&
         (genre ? m.genres.includes(genre) : true)
-      );
+      ).slice(skip, skip + limit);
     }
-    const response = await axiosInstance.get('/movies', { params: { search, genre } });
+    const response = await axiosInstance.get('/movies', { params: { search, genre, skip, limit } });
+    return response.data;
+  },
+
+  getGenres: async () => {
+    if (USE_MOCK) {
+      await delay(200);
+      return ['Action', 'Sci-Fi', 'Comedy', 'Drama', 'Thriller', 'Animation', 'Crime', 'Adventure'];
+    }
+    const response = await axiosInstance.get('/movies/genres');
     return response.data;
   },
 
