@@ -38,19 +38,8 @@ export default function Recommendation() {
     return (
       <div className="bg-slate-800 border border-slate-700/50 rounded-2xl mx-3 p-4 flex flex-col h-full shadow-lg hover:shadow-indigo-500/20 transition-all duration-300 group min-h-[280px]">
         <div className="flex flex-col items-center justify-center text-center p-6 bg-slate-800/50 border-b border-slate-700/30 rounded-t-xl mb-4 relative flex-grow">
-          <div className="absolute top-3 right-3">
-            <Tag value={movie.year || 'N/A'} severity="info" className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" />
-          </div>
           <h3 className="text-2xl font-bold text-white mb-2 line-clamp-2 mt-4">{movie.title}</h3>
           <p className="text-sm text-slate-400">{movie.genres ? movie.genres.join(' • ') : 'Không rõ thể loại'}</p>
-        </div>
-        
-        <div className="mt-auto bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-3 flex gap-3 items-start">
-          <i className="pi pi-sparkles text-indigo-400 mt-1"></i>
-          <div>
-            <span className="text-xs text-indigo-300 font-semibold uppercase tracking-wider block mb-1">Gợi ý vì</span>
-            <span className="text-sm text-slate-300">{movie.reason}</span>
-          </div>
         </div>
       </div>
     );
@@ -147,7 +136,6 @@ function MovieBasedRecs({ movieId }) {
         <div key={movie.id} className="bg-slate-800/80 rounded-xl p-5 flex flex-col gap-2 border border-slate-700/50 hover:border-emerald-500/50 transition-colors">
           <div className="flex justify-between items-start mb-1">
             <h4 className="font-bold text-lg text-white line-clamp-1 flex-1 pr-4">{movie.title}</h4>
-            <Tag value={movie.year || 'N/A'} severity="success" className="bg-emerald-500/20 text-emerald-400 text-xs" />
           </div>
           <p className="text-sm text-slate-400 mb-2">{movie.genres ? movie.genres.join(' • ') : ''}</p>
           <div className="mt-auto bg-emerald-500/10 p-2 rounded-lg">

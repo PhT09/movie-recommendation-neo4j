@@ -1,4 +1,4 @@
-# Các Câu Lệnh Cypher Hữu Ích Dành Cho Team
+# Các Câu Lệnh Cypher
 
 File này dùng để lưu trữ các câu lệnh Cypher thường dùng để mọi người trong nhóm có thể dễ dàng copy và test trên giao diện Neo4j Workspace.
 

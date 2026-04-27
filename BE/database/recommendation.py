@@ -42,3 +42,18 @@ def get_recommendations_by_user_similarity(driver, user_id, limit):
     """
     records, _, _ = driver.execute_query(query, userId=user_id, limit=limit)
     return [{"movieId": record["movieId"], "title": record["title"], "score": record["score"]} for record in records]
+
+def get_similar_movies_by_movie(driver, movie_id, limit):
+    """
+    Find movies similar to a given movie based on shared genres.
+    """
+    movie_id = int(movie_id)
+    query = """
+    MATCH (m1:Movie {movieId: $movieId})-[:HAS_GENRE]->(g:Genre)<-[:HAS_GENRE]-(m2:Movie)
+    WHERE m1 <> m2
+    RETURN toInteger(m2.movieId) AS movieId, m2.title AS title, count(g) AS score
+    ORDER BY score DESC, m2.title ASC
+    LIMIT $limit
+    """
+    records, _, _ = driver.execute_query(query, movieId=movie_id, limit=limit)
+    return [{"movieId": record["movieId"], "title": record["title"], "score": record["score"]} for record in records]
