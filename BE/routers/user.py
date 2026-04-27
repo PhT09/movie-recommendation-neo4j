@@ -30,7 +30,7 @@ def register_user(user_data: UserCreate):
         u = dict(create_result[0]["u"])
         
         return UserResponse(
-            user_id=u.get("userId") or u.get("id"),
+            userId=u.get("userId") or u.get("id"),
             name=u.get("name")
         )
     except Exception as e:
@@ -49,7 +49,7 @@ def get_user(user_id: int):
             
         u = dict(result[0]["u"])
         return UserResponse(
-            user_id=u.get("userId") or u.get("id"),
+            userId=u.get("userId") or u.get("id"),
             name=u.get("name", f"User {user_id}")
         )
     except HTTPException:

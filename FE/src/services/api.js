@@ -4,8 +4,8 @@ import axios from 'axios';
 // CONFIGURATION
 // ==========================================
 // Đặt USE_MOCK = true khi Backend chưa sẵn sàng
-const USE_MOCK = true; 
-const API_BASE_URL = 'http://localhost:8000/api'; // Thay đổi theo URL backend FastAPI của bạn
+const USE_MOCK = false; 
+const API_BASE_URL = 'http://localhost:8000'; // Thay đổi theo URL backend FastAPI của bạn
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -96,6 +96,15 @@ export const ApiService = {
     return response.data;
   },
 
+  getUserRatings: async (userId) => {
+    if (USE_MOCK) {
+      await delay(300);
+      return [];
+    }
+    const response = await axiosInstance.get(`/rating/user/${userId}`);
+    return response.data;
+  },
+
   // ------------------------------------------
   // RECOMMENDATIONS
   // ------------------------------------------
@@ -107,7 +116,8 @@ export const ApiService = {
       return MOCK_RECOMMENDATIONS_USER;
     }
     const response = await axiosInstance.get(`/recommend/user/${userId}`);
-    return response.data;
+    // return array of recommendations as expected by UI
+    return response.data.recommendations || [];
   },
 
   // Gợi ý theo một bộ phim cụ thể
@@ -121,6 +131,6 @@ export const ApiService = {
       }));
     }
     const response = await axiosInstance.get(`/recommend/movie/${movieId}`);
-    return response.data;
+    return response.data.recommendations || [];
   }
 };
