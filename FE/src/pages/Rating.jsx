@@ -41,6 +41,24 @@ export default function Rating() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, selectedGenre]);
 
+  useEffect(() => {
+    const fetchRatings = async () => {
+      if (userId) {
+        try {
+          const ratings = await ApiService.getUserRatings(userId);
+          const ratingMap = {};
+          ratings.forEach(r => {
+            ratingMap[r.movieId] = r.rating;
+          });
+          setUserRatings(ratingMap);
+        } catch (error) {
+          console.error("Không thể tải lịch sử đánh giá", error);
+        }
+      }
+    };
+    fetchRatings();
+  }, [userId]);
+
   const handleRatingChange = async (e, movieId) => {
     const newRating = e.value;
     const oldRating = userRatings[movieId];
@@ -128,7 +146,7 @@ export default function Rating() {
                   <PrimeRating
                     value={userRatings[movie.id] || 0}
                     onChange={(e) => handleRatingChange(e, movie.id)}
-                    cancel={true}
+                    cancel={false}
                     className="text-amber-400 gap-1"
                     pt={{
                       onIcon: { className: 'text-amber-400' },

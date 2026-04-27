@@ -30,3 +30,5 @@ def shutdown_event():
 @app.get("/")
 def root():
     return {"message": "Welcome to Movie Recommendation API!"}
+
+# Trigger uvicorn reload

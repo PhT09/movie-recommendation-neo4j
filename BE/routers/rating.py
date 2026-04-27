@@ -32,8 +32,8 @@ def create_rating(rating_data: RatingCreate):
         
         record = result[0]
         return RatingResponse(
-            user_id=record["user_id"],
-            movie_id=record["movie_id"],
+            userId=record["user_id"],
+            movieId=record["movie_id"],
             rating=record["rating"],
             timestamp=record["timestamp"]
         )
@@ -62,8 +62,8 @@ def update_rating(rating_data: RatingCreate):
         
         record = result[0]
         return RatingResponse(
-            user_id=record["user_id"],
-            movie_id=record["movie_id"],
+            userId=record["user_id"],
+            movieId=record["movie_id"],
             rating=record["rating"],
             timestamp=record["timestamp"]
         )
@@ -90,5 +90,27 @@ def delete_rating(rating_data: RatingDelete):
         return {"message": "Rating deleted successfully"}
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/user/{user_id}")
+def get_user_ratings(user_id: int):
+    query = """
+    MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie)
+    RETURN u.userId AS user_id, m.movieId AS movie_id, r.rating AS rating, r.timestamp AS timestamp
+    """
+    params = {"user_id": user_id}
+    
+    try:
+        result = neo4j_conn.query(query, params)
+        ratings = []
+        for record in result:
+            ratings.append({
+                "userId": record["user_id"],
+                "movieId": record["movie_id"],
+                "rating": record["rating"],
+                "timestamp": record["timestamp"]
+            })
+        return ratings
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -26,13 +26,10 @@ def get_movies(search: Optional[str] = "", genre: Optional[str] = ""):
             m = dict(row["m"])
             movie_id = m.get("movieId") or m.get("id") or 0
             title = m.get("title", "Unknown")
-            # If genres are stored as a string or list, handle it appropriately. 
-            # We provide a fallback just in case.
             genres = m.get("genres", ["Action"])
             if isinstance(genres, str):
                 genres = [g.strip() for g in genres.split("|")]
             
-            # Simple genre filter logic if requested
             if genre and genre.lower() not in [g.lower() for g in genres]:
                 continue
                 

@@ -10,11 +10,12 @@ def recommend_by_user(user_id: int) -> List[Movie]:
     WHERE common_movies >= 10
     MATCH (u2)-[r:RATED]->(rec:Movie)-[:HAS_GENRE]->(g:Genre)
     WHERE toFloat(r.rating) >= 4.0 AND NOT (u1)-[:RATED]->(rec)
-    RETURN rec.movieId AS id, rec.title AS title, collect(DISTINCT g.name) AS genres, common_movies
-    ORDER BY common_movies DESC, toFloat(r.rating) DESC
+    WITH rec, common_movies, max(toFloat(r.rating)) AS max_rating, collect(DISTINCT g.name) AS genres
+    RETURN rec.movieId AS id, rec.title AS title, genres, common_movies
+    ORDER BY common_movies DESC, max_rating DESC
     LIMIT 10
     """
-    records = neo4j_conn.query(query, parameters={"user_id": str(user_id)}, db="neo4j")
+    records = neo4j_conn.query(query, parameters={"user_id": user_id}, db="neo4j")
     
     # 2. Nếu không có user tương tự, fallback sang gợi ý theo Genre
     if not records:
@@ -30,7 +31,7 @@ def recommend_by_user(user_id: int) -> List[Movie]:
         ORDER BY score DESC
         LIMIT 10
         """
-        records = neo4j_conn.query(query_genre, parameters={"user_id": str(user_id)}, db="neo4j")
+        records = neo4j_conn.query(query_genre, parameters={"user_id": user_id}, db="neo4j")
 
     # 3. Fallback cho người dùng mới (Cold Start): Gợi ý các phim có độ đánh giá trung bình cao nhất hệ thống
     if not records:
@@ -67,7 +68,7 @@ def recommend_by_movie(movie_id: int) -> List[Movie]:
     ORDER BY common_genres DESC
     LIMIT 10
     """
-    records = neo4j_conn.query(query, parameters={"movie_id": str(movie_id)}, db="neo4j")
+    records = neo4j_conn.query(query, parameters={"movie_id": movie_id}, db="neo4j")
     
     movies = []
     if records:
