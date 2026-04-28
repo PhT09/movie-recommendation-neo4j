@@ -6,6 +6,7 @@ class Movie(BaseModel):
     id: int
     title: str
     genres: List[str]
+    avg_rating: Optional[float] = None
 
 class MovieRecommendationResponse(BaseModel):
     user_id: Optional[int] = Field(None, alias='userId')

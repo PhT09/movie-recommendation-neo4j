@@ -11,7 +11,7 @@ router = APIRouter(
 def get_recommendations_for_user(user_id: int):
     try:
         results = recommend_by_user(user_id)
-        movies = [Movie(id=r["movieId"], title=r["title"], genres=[]) for r in results]
+        movies = [Movie(id=r["movieId"], title=r["title"], genres=r.get("genres", []), avg_rating=r.get("avg_rating")) for r in results]
         return MovieRecommendationResponse(userId=user_id, recommendations=movies)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -20,7 +20,7 @@ def get_recommendations_for_user(user_id: int):
 def get_similar_movies(movie_id: int):
     try:
         results = recommend_by_movie(movie_id)
-        movies = [Movie(id=r["movieId"], title=r["title"], genres=[]) for r in results]
+        movies = [Movie(id=r["movieId"], title=r["title"], genres=r.get("genres", []), avg_rating=r.get("avg_rating")) for r in results]
         return MovieRecommendationResponse(movieId=movie_id, recommendations=movies)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

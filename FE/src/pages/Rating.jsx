@@ -14,6 +14,8 @@ export default function Rating() {
   const [selectedGenre, setSelectedGenre] = useState('');
   const [loading, setLoading] = useState(false);
   const [userRatings, setUserRatings] = useState({});
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
   const toast = useRef(null);
 
   const [genresOptions, setGenresOptions] = useState([{ label: 'Tất cả', value: '' }]);
@@ -40,7 +42,22 @@ export default function Rating() {
     }
     try {
       const currentSkip = reset ? 0 : skip;
-      const data = await ApiService.getMovies(search, selectedGenre, currentSkip, LIMIT);
+      let data = [];
+      
+      if (!search && !selectedGenre && currentSkip === 0 && userId) {
+        // Lấy gợi ý phim cho User trước
+        const recs = await ApiService.getRecommendByUser(userId);
+        // Lấy thêm phim ngẫu nhiên để lấp đầy phần còn lại
+        const randoms = await ApiService.getMovies(search, selectedGenre, 0, LIMIT - recs.length);
+        
+        // Loại bỏ phim trùng lặp
+        const recIds = new Set(recs.map(r => r.id));
+        const filteredRandoms = randoms.filter(r => !recIds.has(r.id));
+        
+        data = [...recs, ...filteredRandoms];
+      } else {
+        data = await ApiService.getMovies(search, selectedGenre, currentSkip, LIMIT);
+      }
       
       if (reset) {
         setMovies(data);
@@ -117,6 +134,18 @@ export default function Rating() {
     }
   };
 
+  const handleSearchFocus = async () => {
+    setShowSuggestions(true);
+    if (userId && suggestions.length === 0) {
+      try {
+        const data = await ApiService.getRecommendByUser(userId);
+        setSuggestions(data.slice(0, 5)); // Limit to top 5 for dropdown
+      } catch (err) {
+        console.error("Lỗi khi tải gợi ý", err);
+      }
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
       <Toast ref={toast} />
@@ -124,19 +153,38 @@ export default function Rating() {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
           <h2 className="text-3xl font-bold text-white mb-2">Khám phá & Đánh giá</h2>
-          <p className="text-slate-400">Đánh giá phim để nhận gợi ý tốt hơn (≥ 3 sao là Thích)</p>
+          <p className="text-slate-400">Đánh giá phim để nhận gợi ý tốt hơn (≥ 4 sao là Thích)</p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64 flex">
-            <i className="pi pi-search text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
-            <InputText
-              placeholder="Tìm phim..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-[0.85rem] pr-3 focus:ring-2 focus:ring-indigo-500 outline-none font-sans shadow-sm"
-              style={{ paddingLeft: '2.75rem' }}
-            />
+          <div className="relative w-full sm:w-64 flex flex-col">
+            <div className="relative w-full flex">
+              <i className="pi pi-search text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+              <InputText
+                placeholder="Tìm phim..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onFocus={handleSearchFocus}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl py-[0.85rem] pr-3 focus:ring-2 focus:ring-indigo-500 outline-none font-sans shadow-sm"
+                style={{ paddingLeft: '2.75rem' }}
+              />
+            </div>
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-[110%] left-0 w-full bg-slate-800 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto">
+                <div className="px-3 py-2 text-xs text-slate-400 uppercase font-bold border-b border-slate-700 bg-slate-900/50 flex items-center gap-2">
+                  <i className="pi pi-sparkles text-amber-400"></i> Dành riêng cho bạn
+                </div>
+                {suggestions.map(movie => (
+                  <div key={movie.id} 
+                       className="px-4 py-3 hover:bg-slate-700 cursor-pointer text-white flex justify-between items-center transition-colors border-b border-slate-700/50 last:border-0"
+                       onClick={() => setSearch(movie.title)}>
+                    <div className="line-clamp-1 flex-1 text-sm font-medium pr-2">{movie.title}</div>
+                    {movie.avg_rating && <div className="text-yellow-500 text-xs flex items-center gap-1 font-bold whitespace-nowrap"><i className="pi pi-star-fill text-[10px]"></i>{movie.avg_rating}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <Dropdown
             value={selectedGenre}

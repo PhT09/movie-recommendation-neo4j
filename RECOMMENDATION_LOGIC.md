@@ -10,19 +10,21 @@ Hàm `recommend_by_user(user_id)` hoạt động theo cơ chế **Thác nước 
 ### Chốt 1: Lọc cộng tác - Collaborative Filtering (Ưu tiên cao nhất)
 - **Mục tiêu:** Tìm ra những bộ phim được đánh giá cao bởi những người dùng có "khẩu vị" cực kỳ giống với User hiện tại.
 - **Điều kiện:**
-  - Tìm những người dùng khác có cùng xem chung ít nhất **10 bộ phim** với User hiện tại.
+  - Tìm những người dùng khác có **cùng đánh giá >= 4.0 sao** (cùng thích) cho ít nhất **10 bộ phim** với User hiện tại.
   - Phim được gợi ý phải được người dùng tương tự đánh giá từ **4.0 sao trở lên**.
   - Lọc bỏ các bộ phim mà User hiện tại đã xem.
-- **Sắp xếp:** Ưu tiên số lượng phim xem chung (`common_movies DESC`), sau đó ưu tiên theo rating của người dùng tương tự (`rating DESC`).
+- **Sắp xếp:** Ưu tiên số lượng phim cùng thích (`common_movies DESC`), sau đó ưu tiên theo rating của người dùng tương tự (`rating DESC`).
 - **Cypher Code:**
 ```cypher
-MATCH (u1:User {userId: $user_id})-[:RATED]->(m:Movie)<-[:RATED]-(u2:User)
+MATCH (u1:User {userId: $user_id})-[r1:RATED]->(m:Movie)<-[r2:RATED]-(u2:User)
+WHERE toFloat(r1.rating) >= 4.0 AND toFloat(r2.rating) >= 4.0
 WITH u1, u2, count(m) AS common_movies
 WHERE common_movies >= 10
 MATCH (u2)-[r:RATED]->(rec:Movie)-[:HAS_GENRE]->(g:Genre)
 WHERE toFloat(r.rating) >= 4.0 AND NOT (u1)-[:RATED]->(rec)
-RETURN rec.movieId AS id, rec.title AS title, collect(DISTINCT g.name) AS genres, common_movies
-ORDER BY common_movies DESC, toFloat(r.rating) DESC
+WITH rec, collect(DISTINCT g.name) AS genres, max(common_movies) AS max_common, max(toFloat(r.rating)) AS max_rating
+ORDER BY max_common DESC, max_rating DESC
+RETURN rec.movieId AS id, rec.title AS title, genres
 LIMIT 10
 ```
 
@@ -31,7 +33,7 @@ LIMIT 10
 - **Điều kiện:**
   - Tìm ra những Thể loại (Genre) mà User hiện tại đã đánh giá từ **4.0 sao trở lên** cho ít nhất **5 bộ phim**.
   - Gợi ý những phim cùng thể loại đó mà User chưa xem.
-- **Sắp xếp:** Phim thuộc các thể loại mà User xem nhiều lần hơn sẽ được đẩy lên trên cùng (`score DESC`).
+- **Sắp xếp:** Ưu tiên những phim có **điểm trung bình cao nhất** (`avg_rating DESC`), sau đó ưu tiên các phim có nhiều Thể loại trùng khớp với sở thích của người dùng nhất (`score DESC`).
 - **Cypher Code:**
 ```cypher
 MATCH (u:User {userId: $user_id})-[r:RATED]->(m:Movie)-[:HAS_GENRE]->(g:Genre)
@@ -41,8 +43,10 @@ WHERE movies_in_genre >= 5
 MATCH (rec:Movie)-[:HAS_GENRE]->(g)
 WHERE NOT (u)-[:RATED]->(rec)
 WITH rec, collect(DISTINCT g.name) as genres, sum(movies_in_genre) as score
+MATCH (rec)<-[all_r:RATED]-()
+WITH rec, genres, score, avg(toFloat(all_r.rating)) AS avg_rating
+ORDER BY avg_rating DESC, score DESC
 RETURN rec.movieId AS id, rec.title AS title, genres
-ORDER BY score DESC
 LIMIT 10
 ```
 
